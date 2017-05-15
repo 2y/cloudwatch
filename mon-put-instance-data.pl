@@ -574,7 +574,7 @@ if ($report_disk_space)
       add_metric('DiskSpaceAvailable', $disk_units, $disk_avail / $disk_unit_div, $fsystem, $mount);
     }
   }
-  my @df = `/bin/df -i -l -P $df_path`;
+  @df = `/bin/df -i -l -P $df_path`;
   shift @df;
 
   foreach my $line (@df)
