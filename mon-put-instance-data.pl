@@ -31,6 +31,7 @@ Description of available options:
   --disk-space-util   Reports disk space utilization in percentages.  
   --disk-space-used   Reports allocated disk space in gigabytes.
   --disk-space-avail  Reports available disk space in gigabytes.
+  --inode-space-util  Reports inode space utilization in percentages.
   
   --aggregated[=only]    Adds aggregated metrics for instance type, AMI id, and region.
                          If =only is specified, does not report individual instance metrics
@@ -115,6 +116,7 @@ my $report_swap_used;
 my $report_disk_util;
 my $report_disk_used;
 my $report_disk_avail;
+my $report_inode_util;
 my $mem_used_incl_cache_buff;
 my @mount_path;
 my $mem_units;
@@ -153,6 +155,7 @@ my $argv_size = @ARGV;
     'disk-space-util' => \$report_disk_util,
     'disk-space-used' => \$report_disk_used,
     'disk-space-avail' => \$report_disk_avail,
+    'inode-space-util' => \$report_inode_util,
     'auto-scaling:s' => \$auto_scaling,
     'aggregated:s' => \$aggregated,
     'memory-units:s' => \$mem_units,
@@ -569,6 +572,24 @@ if ($report_disk_space)
     }
     if ($report_disk_avail) {
       add_metric('DiskSpaceAvailable', $disk_units, $disk_avail / $disk_unit_div, $fsystem, $mount);
+    }
+  }
+  my @df = `/bin/df -i -l -P $df_path`;
+  shift @df;
+
+  foreach my $line (@df)
+  {
+    my @fields = split('\s+', $line);
+    my $inode_total = $fields[1];
+    my $inode_used = $fields[2];
+    my $inode_avail = $fields[3];
+    my $isystem = $fields[0];
+    my $imount = $fields[5];
+
+    if ($report_inode_util) {
+      my $inode_util = 0;
+      $inode_util = 100 * $inode_used / $inode_total if ($inode_total > 0);
+      add_metric('InodeSpaceUtilization', 'Percent', $inode_util, $isystem, $imount);
     }
   }
 }
